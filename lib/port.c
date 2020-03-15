@@ -51,13 +51,27 @@ create_port(char *dev, int flags) {
 }
 
 int
-get_mac_addr(port_t *port)
+get_dev_info(port_t *port)
 {
-    // FIXME: ret check
-    struct ifreq ifr;
+    int sockfd;
+    struct ifreq ifr, ifr_ip;
     strcpy(ifr.ifr_name, port->dev_name);
-    ioctl(port->fd, SIOCGIFHWADDR, &ifr);
+    
+    /* get mac addr */
+    if(ioctl(port->fd, SIOCGIFHWADDR, &ifr) < 0){
+        perror("cannot get mac addr from port");
+        exit(1);
+    }
     memcpy(port->mac, ifr.ifr_hwaddr.sa_data, 6);
-    // printf("MAC: %x.%x.%x.%x.%x.%x\n", port->mac[0], port->mac[1], port->mac[2], port->mac[3], port->mac[4], port->mac[5]);
+    
+    /* get ip addr, need to create socket first (for SIOCGIFADDR) */
+    if((sockfd = socket(AF_INET, SOCK_STREAM, 0)) < 0){
+        perror("cannot initialize sockfd");
+        exit(1);
+    }
+    if(ioctl(sockfd, SIOCGIFADDR, &ifr) < 0 ){
+        perror("cannot get ip addr from port");
+        exit(1);
+    }
+    port->ip_addr = ((struct sockaddr_in *)&ifr.ifr_addr)->sin_addr.s_addr;
 }
-

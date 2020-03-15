@@ -33,7 +33,7 @@ int main(int argc, char *argv[])
         LOG_TO_SCREEN(" - %s", main_thrd->user_args->port[i]->dev_name);
         // initial tap client
         main_thrd->user_args->port[i]->fd = create_port(main_thrd->user_args->port[i]->dev_name, IFF_TAP | IFF_NO_PI);
-        get_mac_addr(main_thrd->user_args->port[i]);
+        get_dev_info(main_thrd->user_args->port[i]);
 
         if(main_thrd->user_args->port[i]->fd < 0){
             perror("fail to connect to tun/tap");

@@ -5,7 +5,7 @@ process_ip_pkt(struct work_thrd_ctx_t *sbuff)
 {
     struct ipv4hdr *iph = (struct ipv4hdr *) (sbuff->pkt_buff + sbuff->nh);
     char src_ip_str[INET_ADDRSTRLEN], dst_ip_str[INET_ADDRSTRLEN];
-    sbuff->h = ntohs(iph->tot_len);
+    sbuff->h = sbuff->nh + iph->ihl*4;
     
     if(sbuff->debug){
         inet_ntop(AF_INET, &iph->saddr, src_ip_str, INET_ADDRSTRLEN);
@@ -14,7 +14,20 @@ process_ip_pkt(struct work_thrd_ctx_t *sbuff)
         LOG_TO_SCREEN("(%d) saddr: %s, daddr: %s. IPPROTO: %s", sbuff->port_idx, src_ip_str, dst_ip_str, g_ip_proto_str[iph->proto]);
     }
 
+    // FIXME: IP options
+
     // process next layer
+    switch(iph->proto){
+        case IPPROTO_ICMP:
+            process_icmp_pkt(sbuff);
+            break;
+        case IPPROTO_TCP:
+            process_tcp_pkt(sbuff);
+            break;
+        case IPPROTO_UDP:
+            process_udp_pkt(sbuff);
+            break;
+    }
 }
 
 int

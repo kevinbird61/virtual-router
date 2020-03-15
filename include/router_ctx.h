@@ -3,6 +3,7 @@
 
 #include <pthread.h>
 
+#include "argparse.h"
 #include "types.h"
 #include "port.h"
 

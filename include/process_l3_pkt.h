@@ -3,6 +3,7 @@
 
 #include <arpa/inet.h>
 
+#include "process_l4_pkt.h"
 #include "router_ctx.h"
 #include "logger.h"
 #include "types.h"

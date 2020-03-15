@@ -3,9 +3,17 @@
 
 #include <getopt.h>
 #include <stdarg.h>
+
 #include "logger.h"
 #include "utils.h"
 #include "types.h"
+#include "port.h"
+
+// user argument
+typedef struct _arg_parse_t {
+    u16     num_port; // how many interfaces user want to create
+    port_t  **port;    
+} argparse_t;
 
 int parse_args(int argc, char *argv[], argparse_t *myargs);
 
