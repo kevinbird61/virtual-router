@@ -15,6 +15,8 @@ static const char *g_ethertype_str[] = {
     [ETH_IP6]="ETH_IPv6"
 };
 
+static const char bcast_mac[6] = {0xff, 0xff, 0xff, 0xff, 0xff, 0xff};
+
 typedef struct ethhdr_t {
     unsigned char dmac[6];
     unsigned char smac[6];

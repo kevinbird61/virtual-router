@@ -50,11 +50,26 @@ process_icmp_pkt(struct work_thrd_ctx_t *sbuff)
 int
 process_tcp_pkt(struct work_thrd_ctx_t *sbuff)
 {
-
+    struct tcphdr *tcph = (struct tcphdr *)(sbuff->pkt_buff + sbuff->h);
+    
+    if(sbuff->debug){
+        LOG_TO_SCREEN("---------------------------------------------------------");
+        LOG_TO_SCREEN("(%d) TCP sport=%d, dport=%d (seqn=%d, ackn=%d, window=%d) [%c%c%c%c%c%c]", sbuff->port_idx, 
+                ntohs(tcph->th_sport), ntohs(tcph->th_dport), ntohl(tcph->th_seq), ntohl(tcph->th_ack), ntohs(tcph->th_win),
+                (tcph->th_flags & TH_FIN) > 0 ? 'F' : ' ', (tcph->th_flags & TH_SYN) > 0 ? 'S' : ' ', 
+                (tcph->th_flags & TH_RST) > 0 ? 'R' : ' ', (tcph->th_flags & TH_PUSH) > 0 ? 'P' : ' ', 
+                (tcph->th_flags & TH_ACK) > 0 ? 'A' : ' ', (tcph->th_flags & TH_URG) > 0 ? 'U' : ' ');
+    }
 }
 
 int
 process_udp_pkt(struct work_thrd_ctx_t *sbuff)
 {
+    struct udphdr *udph = (struct udphdr *)(sbuff->pkt_buff + sbuff->h);
 
+    if(sbuff->debug){
+        LOG_TO_SCREEN("---------------------------------------------------------");
+        LOG_TO_SCREEN("(%d) UDP sport=%d, dport=%d", sbuff->port_idx, 
+                ntohs(udph->uh_sport), ntohs(udph->uh_dport));
+    }
 }

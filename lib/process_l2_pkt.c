@@ -14,6 +14,14 @@ process_eth_pkt(struct work_thrd_ctx_t *sbuff)
         LOG_TO_SCREEN("(%d) ethertype: %s", sbuff->port_idx, g_ethertype_str[ntohs(eth->ethertype)]);
     }
 
+    // FIXME: check if dmac is owned by us or broadcast
+    // if we have virtual host, then we also need to check here.
+    /*if((memcmp(eth->dmac, sbuff->ports[sbuff->port_idx]->mac, 6) != 0) 
+        (memcmp(eth->dmac, bcast_mac, 6) != 0)){
+        LOG_TO_SCREEN("(%d) this packet isn't for us", sbuff->port_idx);
+        return -1;
+    }*/
+
     // process next layer
     if( ntohs(eth->ethertype) == ETH_IP) {
         process_ip_pkt(sbuff);
