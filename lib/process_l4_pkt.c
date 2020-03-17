@@ -18,9 +18,8 @@ process_icmp_pkt(struct work_thrd_ctx_t *sbuff)
             }
 
             // DEBUG: send back icmp echo reply
-            // FIXME: need to check the ip address and then send back reply
+            /*
             struct ipv4hdr *iph = (struct ipv4hdr *)(sbuff->pkt_buff + sbuff->nh);
-            // iph->ttl -= 1;
             iph->saddr = iph->saddr ^ iph->daddr;
             iph->daddr = iph->saddr ^ iph->daddr;
             iph->saddr = iph->saddr ^ iph->daddr;
@@ -37,6 +36,7 @@ process_icmp_pkt(struct work_thrd_ctx_t *sbuff)
             // send reply
             int nwrite = write(sbuff->ports[sbuff->port_idx]->fd, sbuff->pkt_buff, sbuff->h + 64);
             LOG_TO_SCREEN("(%d) Send back ICMP echo reply (%d bytes)", sbuff->port_idx, nwrite);
+            */
 
             break;
         case ICMP_DEST_UNREACHABLE:

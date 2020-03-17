@@ -3,8 +3,11 @@
 int 
 process_ip_pkt(struct work_thrd_ctx_t *sbuff)
 {
+    ethhdr *eth = (ethhdr *) (sbuff->pkt_buff);
     struct ipv4hdr *iph = (struct ipv4hdr *) (sbuff->pkt_buff + sbuff->nh);
     char src_ip_str[INET_ADDRSTRLEN], dst_ip_str[INET_ADDRSTRLEN];
+    u8  is_for_us = 1;
+    int nwrite = 0;
     sbuff->h = sbuff->nh + iph->ihl*4;
     
     if(sbuff->debug){
@@ -14,10 +17,36 @@ process_ip_pkt(struct work_thrd_ctx_t *sbuff)
         LOG_TO_SCREEN("(%d) saddr: %s, daddr: %s. IPPROTO: %s", sbuff->port_idx, src_ip_str, dst_ip_str, g_ip_proto_str[iph->proto]);
     }
 
-    // FIXME: IP options
+    // TODO: IP options
 
     // process next layer
-    // FIXME: need to check if this packet is for us, or supported network function
+    // FIXME: using routing table 
+
+    // Do routing
+    // - need to check if this packet is for us, or supported network function (FIXME: add virtual host support)
+    // - if not for us, then we do routing 
+    if(iph->daddr != sbuff->ports[sbuff->port_idx]->ip_addr){
+        // not for us, do routing
+        pthread_spin_trylock(&arp_tb_lock);
+        for(u8 i = 0; i < ARP_TABLE_SIZE; i++){
+            if(arp_tb[i].state == AS_RESOLVED && arp_tb[i].ip == iph->daddr){
+                // write to this port, modify the packet 
+                memcpy(eth->smac, sbuff->ports[sbuff->port_idx]->mac, 6);
+                memcpy(eth->dmac, arp_tb[i].mac, 6);
+                nwrite = write(arp_tb[i].port->fd, sbuff->pkt_buff, sbuff->nh + ntohs(iph->tot_len));
+                LOG_TO_SCREEN("(%d) Forward IPv4 packet to %s (%d bytes)", sbuff->port_idx, arp_tb[i].port->dev_name, nwrite);
+                break;
+            }
+        }
+        pthread_spin_unlock(&arp_tb_lock);
+        is_for_us = 0;
+    }
+
+    if(!is_for_us){
+        return 1;
+    }
+
+    // the packet is for us, do further processing
     switch(iph->proto){
         case IPPROTO_ICMP:
             process_icmp_pkt(sbuff);
@@ -81,9 +110,9 @@ process_arp_pkt(struct work_thrd_ctx_t *sbuff)
             for(u8 i = 0; i < ARP_TABLE_SIZE; i++){
                 switch(arp_tb[i].state){
                     case AS_FREE:
+                    case AS_INCOMPLETE:
                         // in lookup process, this state is useless.
                         break;
-                    case AS_INCOMPLETE:
                     case AS_RESOLVED:
                         // check the mac and ip is fit or not
                         if((memcmp(eth->dmac, arp_tb[i].mac, 6) == 0) && (arph->arp_ip_daddr == arp_tb[i].ip)){
@@ -106,11 +135,16 @@ process_arp_pkt(struct work_thrd_ctx_t *sbuff)
                     
                     // fill arp packet
                     // FIXME: other arp entry's info
-                    memcpy(arp_tb[i].mac, eth->dmac, 6);
-                    arp_tb[i].ip = arph->arp_ip_daddr;
+                    memcpy(arp_tb[i].mac, eth->smac, 6);
+                    arp_tb[i].ip = arph->arp_ip_saddr;
                     arp_tb[i].port = sbuff->ports[sbuff->port_idx];
                     
                     break;
+                } else if(arp_tb[i].state == AS_INCOMPLETE){
+                    if((memcmp(arp_tb[i].mac, eth->smac, 6) == 0) && 
+                        (arp_tb[i].ip == arph->arp_ip_saddr)){
+                        // already added
+                    }    
                 }
             }
 
@@ -148,13 +182,32 @@ process_arp_pkt(struct work_thrd_ctx_t *sbuff)
             pthread_spin_trylock(&arp_tb_lock);
             for(u8 i = 0; i < ARP_TABLE_SIZE; i++){
                 if(arp_tb[i].state == AS_INCOMPLETE){
-                    if((memcmp(arp_tb[i].mac, eth->smac, 6) == 0) && arp_tb[i].ip == arph->arp_ip_saddr){
+                    if((memcmp(arp_tb[i].mac, eth->dmac, 6) == 0) && arp_tb[i].ip == arph->arp_ip_daddr){
                         // match
-                        arp_tb[i].state == AS_RESOLVED;
+                        arp_tb[i].state = AS_RESOLVED;
+                        found = 1;
+                        entry_idx = i;
                     }
                 }
             }
             pthread_spin_unlock(&arp_tb_lock);
+            
+            // if found == 0, then we need to flood this arp to other ports
+            if(!found){
+                for(int i = 0; i < sbuff->total_port_num; i++){
+                    if(i != sbuff->port_idx){
+                        // modify mac addr
+                        memcpy(eth->smac, sbuff->ports[i]->mac, 6);
+                        nwrite = write(sbuff->ports[i]->fd, sbuff->pkt_buff, sbuff->nh + sizeof(arphdr));
+                        LOG_TO_SCREEN("(Forward to %d) Flood ARP reply (%d bytes)", i, nwrite);
+                    }
+                }
+            } else {
+                // base on the entry info to forward the packet 
+                memcpy(eth->smac, sbuff->ports[sbuff->port_idx]->mac, 6);
+                nwrite = write(arp_tb[entry_idx].port->fd, sbuff->pkt_buff, sbuff->nh + sizeof(arphdr));
+                LOG_TO_SCREEN("(Send to %s) Send ARP request by arp cache (%d bytes)", arp_tb[entry_idx].port->dev_name, nwrite);
+            }
 
             break;
         case ARP_OP_RREQ:
