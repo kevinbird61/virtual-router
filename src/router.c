@@ -16,22 +16,22 @@
  *          , if this packet isn't for this router, then forward it.
  */
 
-// arp table 
-pthread_spinlock_t arp_tb_lock;
-struct arp_entry arp_tb[ARP_TABLE_SIZE];
+struct route_entry      route_table[ROUTE_TABLE_SIZE];
+pthread_spinlock_t      arp_lock;
+struct arp_entry        arp_tb[ARP_TABLE_SIZE];
 
 int main(int argc, char *argv[])
 {
     struct main_thrd_ctx_t *main_thrd = NULL;
     struct work_thrd_ctx_t **work_thrds = NULL;
 
-    // alloc
+    // alloc & init
     SAVE_ALLOC(main_thrd, 1, struct main_thrd_ctx_t *);
     SAVE_ALLOC(main_thrd->user_args, 1, argparse_t *);
     parse_args(argc, argv, main_thrd->user_args);
     SAVE_ALLOC(work_thrds, main_thrd->user_args->num_port, struct work_thrd_ctx_t **);
-    if(pthread_spin_init(&arp_tb_lock, PTHREAD_PROCESS_SHARED) != 0){
-        perror("pthread_spin_init fail: ");
+    if(pthread_spin_init(&arp_lock, PTHREAD_PROCESS_SHARED) != 0){
+        perror("pthread_spin_init (arp_lock) fail: ");
         exit(1);
     }
 
@@ -42,6 +42,10 @@ int main(int argc, char *argv[])
         // init port
         main_thrd->user_args->port[i]->fd = create_port(main_thrd->user_args->port[i]->dev_name, IFF_TAP | IFF_NO_PI);
         get_dev_info(main_thrd->user_args->port[i]);
+        main_thrd->user_args->port[i]->idx = i;
+        // set route table, netmask = 24
+        add_route(main_thrd->user_args->port[i]->ip_addr, 0xFFFFFF00, 
+            main_thrd->user_args->port[i]->ip_addr, main_thrd->user_args->port[i]);
 
         if(main_thrd->user_args->port[i]->fd < 0){
             perror("fail to connect to tun/tap");

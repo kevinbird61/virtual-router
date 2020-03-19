@@ -21,7 +21,7 @@ run_port(struct work_thrd_ctx_t *this)
 
     // init ctx
     SAVE_ALLOC(this->pkt_buff, 1500, char); // max. length = 1500 
-    
+
     // using poll to control I/O events from all ports
     ufds[0].fd = port->fd;
     ufds[0].events = POLLIN; // only read

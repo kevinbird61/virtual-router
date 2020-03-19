@@ -62,8 +62,14 @@ get_dev_info(port_t *port)
         perror("cannot get mac addr from port");
         exit(1);
     }
-    memcpy(port->mac, ifr.ifr_hwaddr.sa_data, 6);
-    
+    memcpy(port->real_mac, ifr.ifr_hwaddr.sa_data, 6);
+    /* Notice: Currently found that we cannot use real MAC address as router port,
+     * so we need to setup a virtual mac address as our port's mac address.
+     * Now we just set the second byte to its complement.
+     */
+    memcpy(port->mac, port->real_mac, 6);
+    port->mac[1] = ~port->mac[1];
+
     /* get ip addr, need to create socket first (for SIOCGIFADDR) */
     if((sockfd = socket(AF_INET, SOCK_STREAM, 0)) < 0){
         perror("cannot initialize sockfd");

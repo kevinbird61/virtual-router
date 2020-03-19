@@ -43,6 +43,6 @@ ip netns exec h2 ip link set dev veth3 up
 
 # add route for h1, h2
 ip netns exec h1 ip addr add "10.0.0.1/24" dev veth1
-ip netns exec h1 ip route add "10.0.0.0/16" dev veth1
+ip netns exec h1 ip route add "10.0.0.0/16" via "10.0.0.2" dev veth1
 ip netns exec h2 ip addr add "10.0.1.1/24" dev veth3
-ip netns exec h2 ip route add "10.0.0.0/16" dev veth3
+ip netns exec h2 ip route add "10.0.0.0/16" via "10.0.1.2" dev veth3

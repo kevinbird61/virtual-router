@@ -19,10 +19,12 @@
 
 // port 
 typedef struct _port_t {
-    u8      *dev_name;
-    u8      mac[6];
-    u32     ip_addr;
-    u32     fd;
+    u8                      *dev_name;
+    u8                      mac[6];
+    u8                      real_mac[6];
+    u16                     idx;
+    u32                     ip_addr;
+    u32                     fd;
 } port_t;
 
 /* create TAP/TUN for ports,interfaces, return file descriptor */

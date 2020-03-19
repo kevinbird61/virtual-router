@@ -6,8 +6,29 @@
 #include "argparse.h"
 #include "types.h"
 #include "port.h"
+#include "arph.h"
 
-#define ARP_TABLE_SIZE 32
+/* ======================== routing info ======================== */
+/** 
+ * Routing table (v4)
+ * 
+ * | IP address | Netmask   | Gateway   | Interface |
+ * | (32 bits)  | (32 bits) | (32 bits) | (port_t*) |
+ */
+#define ROUTE_TABLE_SIZE 32
+
+struct route_entry {
+    u8                      is_used: 1,
+                            spare: 7;
+    u32                     ip;
+    u32                     netmask;
+    u32                     gw;
+    port_t                  *port;
+};
+
+extern struct route_entry       route_table[ROUTE_TABLE_SIZE];
+extern pthread_spinlock_t       arp_lock;
+extern struct arp_entry         arp_tb[ARP_TABLE_SIZE];
 
 /** main thread */
 struct main_thrd_ctx_t {
@@ -29,46 +50,26 @@ struct work_thrd_ctx_t {
     u8                      *pkt_buff;
     u8                      nh; // (struct iphdr *)(pkt_buff + nh)
     u8                      h;  // (struct tcphdr *)(pkt_buff + h)
+    /* other */
+    
 };
 
 /* ======================== worker_func.c ======================== */
 int run_port(struct work_thrd_ctx_t *this);
 
-/* ======================== routing info ======================== */
-/**
- * ARP entry, table:
- * 
- * | IP address | MAC address | interface   | ... |
- * | (32 bits)  | (48 bits)   | (port_t*)   | ... |
- */
-enum ARP_Entry_State {
-    AS_FREE = 0,        /* entry is unused */
-    AS_INCOMPLETE = 1,  /* entry is used but incompleted */
-    AS_RESOLVED = 2     /* entry has been resolved */
-};
+/* ======================== arp.c ======================== */
+// arp reply
+int resolve_arp_cache(struct work_thrd_ctx_t *sbuff);
+// arp request
+int add_new_arp_cache(struct work_thrd_ctx_t *sbuff);
+// fill dmac with arp cache
+int fill_dmac_by_arp(u32 ip, u8 *mac);
 
-struct arp_entry {
-    u8      mac[6];     // hardware address
-    u32     ip;         // protocol address
-    port_t  *port;   // pointer to interface/port
-    u16     state;      // state of arp entry
-    u16     hw_type;    // hardware type
-    u16     proto_type; // protocol type
-    u8      hw_len;     // hardware length
-    u8      proto_len;  // protocol length
-    // u32 queue_len;
-    // u32 attempts;
-    u32     age;
-};
+/* ======================== route.c ======================== */
+int add_route(u32 ip, u32 netmask, u32 gateway, port_t *port);
+port_t *lookup_route(u32 target_ip);
 
-extern pthread_spinlock_t arp_tb_lock;
-extern struct arp_entry arp_tb[ARP_TABLE_SIZE];
-
-/** 
- * Routing table (v4)
- * 
- * | IP address | Netmask   | Gateway   | Interface |
- * | (32 bits)  | (32 bits) | (32 bits) | (port_t*) |
- */
+/* ======================== pkt_send.c ======================== */
+int pkt_send(port_t *port, u8 *pkt_buff, u16 len);
 
 #endif

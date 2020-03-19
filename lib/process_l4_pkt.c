@@ -3,7 +3,12 @@
 int
 process_icmp_pkt(struct work_thrd_ctx_t *sbuff)
 {
+    u16 port_idx = sbuff->port_idx;
+    port_t *port = sbuff->ports[port_idx];
+    ethhdr *eth = (ethhdr *)(sbuff->pkt_buff);
+    struct ipv4hdr *iph = (struct ipv4hdr *)(sbuff->pkt_buff + sbuff->nh);
     icmphdr *icmph = (icmphdr *)(sbuff->pkt_buff + sbuff->h);
+
     switch(icmph->type){
         case ICMP_ECHO_REPLY:
             if(sbuff->debug){
@@ -17,26 +22,19 @@ process_icmp_pkt(struct work_thrd_ctx_t *sbuff)
                 LOG_TO_SCREEN("(%d) ICMP type = %d, code = %d, %s", sbuff->port_idx, icmph->type, icmph->code, g_icmp_echo_str[icmph->type]);
             }
 
-            // DEBUG: send back icmp echo reply
-            /*
-            struct ipv4hdr *iph = (struct ipv4hdr *)(sbuff->pkt_buff + sbuff->nh);
+            /* send icmp echo reply back */
             iph->saddr = iph->saddr ^ iph->daddr;
             iph->daddr = iph->saddr ^ iph->daddr;
             iph->saddr = iph->saddr ^ iph->daddr;
-
             icmph->type = ICMP_ECHO_REPLY;
             icmph->checksum = 0; 
-            icmph->checksum = calc_icmp_cksum((u16 *)icmph, 64);
+            icmph->checksum = calc_icmp_cksum((u16 *)icmph, ntohs(iph->tot_len) - sizeof(struct ipv4hdr));
 
-            ethhdr *eth = (ethhdr *)(sbuff->pkt_buff);
             memcpy(eth->dmac, eth->smac, 6);
-            // memcpy(eth->smac, sbuff->ports[sbuff->port_idx]->mac, 6);
-            eth->smac[1] = 0x26; // mac of our virtual host
+            memcpy(eth->smac, port->mac, 6);
 
-            // send reply
-            int nwrite = write(sbuff->ports[sbuff->port_idx]->fd, sbuff->pkt_buff, sbuff->h + 64);
-            LOG_TO_SCREEN("(%d) Send back ICMP echo reply (%d bytes)", sbuff->port_idx, nwrite);
-            */
+            LOG_TO_SCREEN("(%d) Send ICMP %s.", port_idx, g_icmp_echo_str[icmph->type]);
+            pkt_send(port, sbuff->pkt_buff, sbuff->h + ntohs(iph->tot_len));
 
             break;
         case ICMP_DEST_UNREACHABLE:
