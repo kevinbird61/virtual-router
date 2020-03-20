@@ -33,6 +33,7 @@ extern struct arp_entry         arp_tb[ARP_TABLE_SIZE];
 /** main thread */
 struct main_thrd_ctx_t {
     argparse_t              *user_args;
+    struct work_thrd_ctx_t  **workers;
 };
 
 /** worker thread */
@@ -51,11 +52,13 @@ struct work_thrd_ctx_t {
     u8                      nh; // (struct iphdr *)(pkt_buff + nh)
     u8                      h;  // (struct tcphdr *)(pkt_buff + h)
     /* other */
-    
 };
 
 /* ======================== worker_func.c ======================== */
 int run_port(struct work_thrd_ctx_t *this);
+
+/* ======================== main_func.c ======================== */
+int router_cli(struct main_thrd_ctx_t *this);
 
 /* ======================== arp.c ======================== */
 // arp reply

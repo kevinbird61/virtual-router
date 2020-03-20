@@ -16,7 +16,7 @@ run_port(struct work_thrd_ctx_t *this)
     struct pollfd ufds[1];
     port_t *port = this->ports[this->port_idx];
     u16 poll_timeout = 5000; // 5 seconds
-    this->debug = 1; // FIXME: set true as default (this field is configurable)
+    // this->debug = 1; // FIXME: set true as default (this field is configurable)
     int ret, nread;
 
     // init ctx

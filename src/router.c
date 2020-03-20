@@ -69,14 +69,14 @@ int main(int argc, char *argv[])
         LOG_TO_SCREEN("Port(%d) create successfully, tid = %u.", i, work_thrds[i]->tid);
     }
 
+    main_thrd->workers = work_thrds;
+
+    // main thread's CLI
+    router_cli(main_thrd);
+
     for(int i = 0; i < main_thrd->user_args->num_port; i++){
         pthread_join(work_thrds[i]->tid, NULL);
     }
-
-    // main thread's CLI
-    //while(1){
-        // TODO: put main CLI loop into another func
-    //}
 
     return 0;
 }
