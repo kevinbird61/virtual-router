@@ -30,7 +30,9 @@ add_new_arp_cache(struct work_thrd_ctx_t *sbuff)
     pthread_spin_unlock(&arp_lock);
 
     if(is_full){
-        LOG_TO_SCREEN("(%d) ARP cache is full, need to drop some old entry.", sbuff->port_idx);
+        if(sbuff->debug){
+            LOG_TO_SCREEN("(%d) ARP cache is full, need to drop some old entry.", sbuff->port_idx);
+        }
         return -1;
     }
 
@@ -40,27 +42,29 @@ add_new_arp_cache(struct work_thrd_ctx_t *sbuff)
 int 
 resolve_arp_cache(struct work_thrd_ctx_t *sbuff)
 {
-    u8  found = 0, entry_idx = 0;
+    u8  entry_idx = 0;
     u16 port_idx = sbuff->port_idx;
     arphdr *arph = (arphdr *) (sbuff->pkt_buff + sbuff->nh);
     port_t *port = sbuff->ports[port_idx];
 
     // update arp table
     pthread_spin_trylock(&arp_lock);
-    for(u8 i = 0; i < ARP_TABLE_SIZE; i++){
-        if(arp_tb[i].state == AS_INCOMPLETE && arp_tb[i].ip == arph->arp_ip_saddr){
+    for(entry_idx = 0; entry_idx < ARP_TABLE_SIZE; entry_idx++){
+        if(arp_tb[entry_idx].state == AS_INCOMPLETE && 
+            arp_tb[entry_idx].ip == arph->arp_ip_saddr){
             // match
-            arp_tb[i].state = AS_RESOLVED;
-            memcpy(arp_tb[i].mac, arph->arp_eth_src, 6);
-            arp_tb[i].ip = arph->arp_ip_saddr;
-            arp_tb[i].port = port;
-            LOG_TO_SCREEN("(%d) Resolved an ARP entry, idx = %d", port_idx, i);
-            found = 1;
-            entry_idx = i;
+            arp_tb[entry_idx].state = AS_RESOLVED;
+            memcpy(arp_tb[entry_idx].mac, arph->arp_eth_src, 6);
+            arp_tb[entry_idx].ip = arph->arp_ip_saddr;
+            arp_tb[entry_idx].port = port;
             break;
         }
     }
     pthread_spin_unlock(&arp_lock);
+
+    if(sbuff->debug){
+        LOG_TO_SCREEN("(%d) Resolved an ARP entry, idx = %d", port_idx, entry_idx);
+    }
 }
 
 int 

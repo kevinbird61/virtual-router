@@ -5,20 +5,26 @@
 #include <string.h>
 #include <stdio.h>
 
+#define CMD_BUF_SIZE        128
+#define WORD_BUF_SIZE       32
+
 /**
  * main CLI loop
  */
 int router_cli(struct main_thrd_ctx_t *this)
 {
-    char cmd[128], curr[32], rest[96];
+    char cmd[CMD_BUF_SIZE], curr[WORD_BUF_SIZE], rest[CMD_BUF_SIZE-WORD_BUF_SIZE];
     u8 L1_cmd_idx = 0, L2_idx = 0;
 
+    // register hook function
     cmd_hook_func[CMD_DEBUG_PKT] = debug_packet;
+    cmd_hook_func[CMD_DEBUG_NON] = debug_disable;
+    cmd_hook_func[CMD_HELP_ALL] = help_all;
 
-    printf("===============================================\n");
+    LOG_TO_SCREEN("===============================================");
     while(1) {
         printf("myRouter> ");
-        if(fgets(cmd, 128, stdin)){
+        if(fgets(cmd, CMD_BUF_SIZE, stdin)){
             /* get first token to distinguish */
             sscanf(cmd, "%s %[^\n]", curr, rest);
 
@@ -29,11 +35,13 @@ int router_cli(struct main_thrd_ctx_t *this)
                     switch(L1_cmd_idx){
                         /* ============================================= CMD_DEBUG ============================================= */
                         case CMD_DEBUG:
-                            for(L2_idx = CMD_DEBUG_PKT; L2_idx < CMD_DEBUG_END; L2_idx++){
+                            for(L2_idx = CMD_DEBUG_START + 1; L2_idx < CMD_DEBUG_END; L2_idx++){
                                 u8 iter_idx = 0, match_idx = 0;
+                                sscanf(cmd, "%s %[^\n]", curr, rest); // refresh
                                 while(debug_cmd[L2_idx][iter_idx] != NULL){
                                     // puts(debug_cmd[L2_idx][iter_idx]);
                                     sscanf(rest, "%s %[^\n]", curr, rest);
+                                    // printf("[%s] Curr: %s, rest: %s\n", debug_cmd[L2_idx][iter_idx], curr, rest);
                                     if(strstr(debug_cmd[L2_idx][iter_idx], curr) != NULL){
                                         // match
                                         match_idx++;
@@ -41,23 +49,29 @@ int router_cli(struct main_thrd_ctx_t *this)
                                     iter_idx++; 
                                 }
 
-                                if( iter_idx == match_idx ) {
+                                if( iter_idx == match_idx && iter_idx != 0 && match_idx != 0 ) {
                                     // match total command, call its hook func 
                                     switch(L2_idx){
                                         case CMD_DEBUG_PKT:
                                             (*cmd_hook_func[CMD_DEBUG_PKT])(this);
                                             break;
+                                        case CMD_DEBUG_NON:
+                                            (*cmd_hook_func[CMD_DEBUG_NON])(this);
+                                            break;
                                         default: // not support
-                                            puts("Invalid L2 idx");
+                                            LOG_TO_SCREEN("Invalid L2 idx");
                                             break; 
                                     }
-                                } else { 
-                                    puts("Wrong debug command");
+                                    break;
                                 }
                             }
                             break; 
                         /* ============================================= CMD_SHOW ============================================= */
                         case CMD_SHOW: 
+                            break;
+                        /* ============================================= CMD_SHOW ============================================= */
+                        case CMD_HELP:
+                            (*cmd_hook_func[CMD_HELP_ALL])(this);
                             break;
                         default: // show not happen
                             break;
@@ -66,7 +80,7 @@ int router_cli(struct main_thrd_ctx_t *this)
                 }
             }
             if(L1_cmd_idx == CMD_LAST) {
-                puts("Not supported command.");
+                LOG_TO_SCREEN("Not supported command.");
             }
             L1_cmd_idx = 0;
         }

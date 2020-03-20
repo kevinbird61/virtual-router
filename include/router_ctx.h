@@ -4,6 +4,7 @@
 #include <pthread.h>
 
 #include "argparse.h"
+#include "logger.h"
 #include "types.h"
 #include "port.h"
 #include "arph.h"

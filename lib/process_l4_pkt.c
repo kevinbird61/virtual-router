@@ -8,6 +8,7 @@ process_icmp_pkt(struct work_thrd_ctx_t *sbuff)
     ethhdr *eth = (ethhdr *)(sbuff->pkt_buff);
     struct ipv4hdr *iph = (struct ipv4hdr *)(sbuff->pkt_buff + sbuff->nh);
     icmphdr *icmph = (icmphdr *)(sbuff->pkt_buff + sbuff->h);
+    u16 nwrite = 0;
 
     switch(icmph->type){
         case ICMP_ECHO_REPLY:
@@ -33,9 +34,12 @@ process_icmp_pkt(struct work_thrd_ctx_t *sbuff)
             memcpy(eth->dmac, eth->smac, 6);
             memcpy(eth->smac, port->mac, 6);
 
-            LOG_TO_SCREEN("(%d) Send ICMP %s.", port_idx, g_icmp_echo_str[icmph->type]);
             pkt_send(port, sbuff->pkt_buff, sbuff->h + ntohs(iph->tot_len));
-
+            if(sbuff->debug){
+                LOG_TO_SCREEN("(%d) Send ICMP %s.", port_idx, g_icmp_echo_str[icmph->type]);
+                LOG_TO_SCREEN("(%d) Send packet to port:%d (%d bytes)", port->idx, port->idx, nwrite);
+            }
+            
             break;
         case ICMP_DEST_UNREACHABLE:
             break;

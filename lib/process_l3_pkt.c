@@ -20,8 +20,6 @@ process_ip_pkt(struct work_thrd_ctx_t *sbuff)
 
     // TODO: IP options
 
-    // process next layer
-    
     // check if this packet is for us
     if(iph->daddr != port->ip_addr){
         // TODO: using routing table 
@@ -53,8 +51,11 @@ process_ip_pkt(struct work_thrd_ctx_t *sbuff)
                 
                 add_new_arp_cache(sbuff);
 
-                LOG_TO_SCREEN("(%d) Router send ARP request", port_idx);
-                pkt_send(target_port, sbuff->pkt_buff, sizeof(ethhdr) + sizeof(arphdr));
+                nwrite = pkt_send(target_port, sbuff->pkt_buff, sizeof(ethhdr) + sizeof(arphdr));
+                if(sbuff->debug){
+                    LOG_TO_SCREEN("(%d) Router send ARP request", port_idx);
+                    LOG_TO_SCREEN("(%d) Send packet to port:%d (%d bytes)", port->idx, target_port->idx, nwrite);
+                }
             }
         }
         
@@ -112,11 +113,17 @@ process_arp_pkt(struct work_thrd_ctx_t *sbuff)
                 memcpy(eth->smac, port->mac, 6);
                 arph->arp_op = htons(ARP_OP_RES);
                 // send the arp reply back (unicast)
-                LOG_TO_SCREEN("(%d) Send ARP reply back to %s", port_idx, arp_src_ip_str);
-                pkt_send(port, sbuff->pkt_buff, sbuff->nh + sizeof(arphdr));
+                nwrite = pkt_send(port, sbuff->pkt_buff, sbuff->nh + sizeof(arphdr));
+
+                if(sbuff->debug) {
+                    LOG_TO_SCREEN("(%d) Send ARP reply back to %s", port_idx, arp_src_ip_str);
+                    LOG_TO_SCREEN("(%d) Send packet to port:%d (%d bytes)", port->idx, port->idx, nwrite);
+                }
             } else {
                 // drop 
-                LOG_TO_SCREEN("(%d) ARP request is not for us, drop it", port_idx);
+                if(sbuff->debug) {
+                    LOG_TO_SCREEN("(%d) ARP request is not for us, drop it", port_idx);
+                }
             }
 
             break;
@@ -139,8 +146,11 @@ process_arp_pkt(struct work_thrd_ctx_t *sbuff)
                     if(i != port_idx){
                         // modify mac addr
                         memcpy(eth->smac, sbuff->ports[i]->mac, 6);
-                        pkt_send(sbuff->ports[i], sbuff->pkt_buff, sbuff->nh + sizeof(arphdr));
-                        LOG_TO_SCREEN("(%d) Flood ARP reply to port:%d", port_idx, i);
+                        nwrite = pkt_send(sbuff->ports[i], sbuff->pkt_buff, sbuff->nh + sizeof(arphdr));
+                        if(sbuff->debug) {
+                            LOG_TO_SCREEN("(%d) Flood ARP reply to port:%d", port_idx, i);
+                            LOG_TO_SCREEN("(%d) Send packet to port:%d (%d bytes)", port->idx, sbuff->ports[i]->idx, nwrite);
+                        }
                     }
                 }
             }
