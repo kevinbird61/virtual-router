@@ -31,7 +31,9 @@ process_ip_pkt(struct work_thrd_ctx_t *sbuff)
             // send to target 
             memcpy(eth->smac, target_port->mac, 6);
             if(fill_dmac_by_arp(iph->daddr, eth->dmac) >= 0){
-                pkt_send(target_port, sbuff->pkt_buff, sbuff->nh + ntohs(iph->tot_len));
+                if( pkt_send(target_port, sbuff->pkt_buff, sbuff->nh + ntohs(iph->tot_len)) >= 0 ){
+                    STATS_INC_SENT_PKT(sbuff);
+                }
             } else {
                 // send arp
                 u32 target_ip = iph->daddr;
@@ -52,9 +54,12 @@ process_ip_pkt(struct work_thrd_ctx_t *sbuff)
                 add_new_arp_cache(sbuff);
 
                 nwrite = pkt_send(target_port, sbuff->pkt_buff, sizeof(ethhdr) + sizeof(arphdr));
-                if(sbuff->debug){
+                if(sbuff->debug && (nwrite > 0)){
                     LOG_TO_SCREEN("(%d) Router send ARP request", port_idx);
                     LOG_TO_SCREEN("(%d) Send packet to port:%d (%d bytes)", port->idx, target_port->idx, nwrite);
+                }
+                if(nwrite > 0){
+                    STATS_INC_SENT_PKT(sbuff);
                 }
             }
         }
@@ -115,15 +120,19 @@ process_arp_pkt(struct work_thrd_ctx_t *sbuff)
                 // send the arp reply back (unicast)
                 nwrite = pkt_send(port, sbuff->pkt_buff, sbuff->nh + sizeof(arphdr));
 
-                if(sbuff->debug) {
+                if(sbuff->debug && (nwrite > 0)) {
                     LOG_TO_SCREEN("(%d) Send ARP reply back to %s", port_idx, arp_src_ip_str);
                     LOG_TO_SCREEN("(%d) Send packet to port:%d (%d bytes)", port->idx, port->idx, nwrite);
+                }
+                if(nwrite > 0){
+                    STATS_INC_SENT_PKT(sbuff);
                 }
             } else {
                 // drop 
                 if(sbuff->debug) {
                     LOG_TO_SCREEN("(%d) ARP request is not for us, drop it", port_idx);
                 }
+                STATS_INC_DROP_PKT(sbuff);
             }
 
             break;
@@ -140,16 +149,18 @@ process_arp_pkt(struct work_thrd_ctx_t *sbuff)
             if( arph->arp_ip_daddr == port->ip_addr ) {
                 resolve_arp_cache(sbuff);
             } else {
-                // flood to other ports
                 // flood arp reply to other ports
                 for(int i = 0; i < sbuff->total_port_num; i++){
                     if(i != port_idx){
                         // modify mac addr
                         memcpy(eth->smac, sbuff->ports[i]->mac, 6);
                         nwrite = pkt_send(sbuff->ports[i], sbuff->pkt_buff, sbuff->nh + sizeof(arphdr));
-                        if(sbuff->debug) {
+                        if(sbuff->debug && (nwrite > 0)) {
                             LOG_TO_SCREEN("(%d) Flood ARP reply to port:%d", port_idx, i);
                             LOG_TO_SCREEN("(%d) Send packet to port:%d (%d bytes)", port->idx, sbuff->ports[i]->idx, nwrite);
+                        }
+                        if(nwrite > 0){
+                            STATS_INC_SENT_PKT(sbuff);
                         }
                     }
                 }

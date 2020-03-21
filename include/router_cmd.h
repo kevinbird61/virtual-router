@@ -27,6 +27,7 @@ enum ROUTER_CMD {
     // show
     CMD_SHOW_START,
     CMD_SHOW_STATS,
+    CMD_SHOW_PORTS,
     CMD_SHOW_END,
     // help 
     CMD_HELP_ALL,
@@ -40,27 +41,35 @@ static const char *desc_router_cmd[] = {
     [CMD_DEBUG_PKT] = "Enable all debug message from all ports.",
     [CMD_DEBUG_NON] = "Disable all debug message from all ports.",
     // show
-    [CMD_SHOW_STATS] = "",
+    [CMD_SHOW_STATS] = "Show all statistics collected by virtual router.",
+    [CMD_SHOW_PORTS] = "Show all ports/interfaces information.",
     // help 
     [CMD_HELP_ALL] = "Print this help message."
 };
 
-/* debug command */
-static const char *debug_cmd[][32] = 
+static const char *L2_cmd[][32] = 
 {
-    [CMD_DEBUG_START] = NULL,
-    [CMD_DEBUG_PKT] = {"packet", NULL},
-    [CMD_DEBUG_NON] = {"no", NULL},
-    [CMD_DEBUG_END] = NULL
+    /* debug command */
+    [CMD_DEBUG_START] =     NULL,
+    [CMD_DEBUG_PKT] =       {"packet", NULL},
+    [CMD_DEBUG_NON] =       {"no", NULL},
+    [CMD_DEBUG_END] =       NULL,
+    /* show command */
+    [CMD_SHOW_START] =      NULL,
+    [CMD_SHOW_STATS] =      {"stats", NULL},
+    [CMD_SHOW_PORTS] =      {"ports", NULL},
+    [CMD_SHOW_END] =        NULL
 };
-
-/* show command */
 
 /* hook func list */
 static int (*cmd_hook_func[CMD_ROUTE_CMD_END]) (struct main_thrd_ctx_t *this);
-/* hook func */
-int debug_packet(struct main_thrd_ctx_t *this);
-int debug_disable(struct main_thrd_ctx_t *this);
-int help_all(struct main_thrd_ctx_t *this);
+/* hook func - debug */
+int cmd_debug_packet(struct main_thrd_ctx_t *this);
+int cmd_debug_disable(struct main_thrd_ctx_t *this);
+/* hook func - show */
+int cmd_show_stats(struct main_thrd_ctx_t *this);
+int cmd_show_ports(struct main_thrd_ctx_t *this);
+/* hook func - help */
+int cmd_help_all(struct main_thrd_ctx_t *this);
 
 #endif

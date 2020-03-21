@@ -39,21 +39,28 @@ struct main_thrd_ctx_t {
 
 /** worker thread */
 struct work_thrd_ctx_t {
-    /* thrd info */
-    pthread_t               tid;
     /* port/intf info */
     port_t                  **ports;
     u16                     total_port_num;
     u16                     port_idx;
-    /* ctrl */
+    /* ctrl flags */
     u8                      debug: 1,
                             spare: 7;
     /* pkt info */
     u8                      *pkt_buff;
-    u8                      nh; // (struct iphdr *)(pkt_buff + nh)
-    u8                      h;  // (struct tcphdr *)(pkt_buff + h)
-    /* other */
-};
+    u8                      nh; // L2 offset
+    u8                      h;  // L3 offset
+    /* traffic statistics */
+    u32                     sent_pkts;
+    u32                     recv_pkts;
+    u32                     drop_pkts;
+    /* thrd info */
+    pthread_t               tid;
+} __attribute__((aligned(64)));
+
+#define STATS_INC_SENT_PKT(worker)      (worker->sent_pkts++)
+#define STATS_INC_RECV_PKT(worker)      (worker->recv_pkts++)
+#define STATS_INC_DROP_PKT(worker)      (worker->drop_pkts++)
 
 /* ======================== worker_func.c ======================== */
 int run_port(struct work_thrd_ctx_t *this);

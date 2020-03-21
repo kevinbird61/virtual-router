@@ -22,6 +22,8 @@ process_eth_pkt(struct work_thrd_ctx_t *sbuff)
         return -1;
     }*/
 
+    STATS_INC_RECV_PKT(sbuff);
+
     // process next layer
     if( ntohs(eth->ethertype) == ETH_IP) {
         process_ip_pkt(sbuff);
