@@ -94,6 +94,8 @@ cmd_help_all(struct main_thrd_ctx_t *this)
     LOG_TO_SCREEN("List all support CLI command:");
     for(L1_cmd_idx = CMD_DEBUG; L1_cmd_idx < CMD_LAST; L1_cmd_idx++){
         LOG_TO_SCREEN("* %s: ", L1_cmd[L1_cmd_idx]);
+
+        /* fetch the start/end index */
         switch(L1_cmd_idx){
             case CMD_DEBUG:
                 L2_cmd_idx = CMD_DEBUG_START + 1;
@@ -105,21 +107,21 @@ cmd_help_all(struct main_thrd_ctx_t *this)
                 break;
             case CMD_HELP:
                 L2_cmd_end = 0;
-                printf("\t%s ", L1_cmd[CMD_HELP]);
-                printf(": %s\n", desc_router_cmd[CMD_HELP_ALL]);
+                LOG_TO_SCREEN("\t%s ", L1_cmd[CMD_HELP]);
+                LOG_TO_SCREEN(": %s\n", desc_router_cmd[CMD_HELP_ALL]);
                 break;
         }
 
-        // print here
+        /* print the actual strings here */
         for(L2_cmd_idx; L2_cmd_idx < L2_cmd_end; L2_cmd_idx++){
             u8 iter_idx = 0;
-            printf("\t%s ", L1_cmd[L1_cmd_idx]);
+            LOG_TO_SCREEN("\t%s ", L1_cmd[L1_cmd_idx]);
             while(L2_cmd[L2_cmd_idx][iter_idx] != NULL){
-                printf("%s ", L2_cmd[L2_cmd_idx][iter_idx]);
+                LOG_TO_SCREEN("%s ", L2_cmd[L2_cmd_idx][iter_idx]);
                 iter_idx++;
             }
-            // print description here
-            printf(": %s\n", desc_router_cmd[L2_cmd_idx]);
+            /* description */
+            LOG_TO_SCREEN(": %s\n", desc_router_cmd[L2_cmd_idx]);
         }
     }
 
