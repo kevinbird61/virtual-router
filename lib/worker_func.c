@@ -15,8 +15,8 @@ run_port(struct work_thrd_ctx_t *this)
 {
     struct pollfd ufds[1];
     port_t *port = this->ports[this->port_idx];
+    u64 tval = 0, tstart = 0, tend = 0;
     u16 poll_timeout = 5000; // 5 seconds
-    // this->debug = 1; // FIXME: set true as default (this field is configurable)
     int ret, nread;
 
     // init ctx
@@ -28,6 +28,7 @@ run_port(struct work_thrd_ctx_t *this)
 
     // main loop 
     while(1) {
+        tstart = get_utime();
         if ( (ret = poll(ufds, 1, poll_timeout) ) > 0 ) { 
             // check R/W and exception IO
             // =================== error handler =================== //
@@ -55,6 +56,13 @@ run_port(struct work_thrd_ctx_t *this)
         } else {
             // timeout occur
             // perror("poll timeout");
+        }
+        tend = get_utime();
+        tval += (tend - tstart);
+
+        if ((tval/USEC) > 30 ) { // timer, running some periodical functions
+            send_gratuitous_arp(this);
+            tval = 0;
         }
     } 
 

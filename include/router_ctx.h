@@ -75,7 +75,7 @@ int resolve_arp_cache(struct work_thrd_ctx_t *sbuff);
 int add_new_arp_cache(struct work_thrd_ctx_t *sbuff);
 // fill dmac with arp cache
 int fill_dmac_by_arp(u32 ip, u8 *mac);
-
+int send_gratuitous_arp(struct work_thrd_ctx_t *sbuff);
 /* ======================== route.c ======================== */
 int add_route(u32 ip, u32 netmask, u32 gateway, port_t *port);
 port_t *lookup_route(u32 target_ip);

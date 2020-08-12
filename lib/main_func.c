@@ -46,7 +46,8 @@ int router_cli(struct main_thrd_ctx_t *this)
                             L2_idx = CMD_SHOW_START + 1;
                             L2_idx_end = CMD_SHOW_END;
                             break;
-                        /* ============================================= CMD_SHOW ============================================= */
+                        /* =============================================
+ * CMD_HELP ============================================= */
                         case CMD_HELP:
                             L2_idx_end = 0;
                             (*cmd_hook_func[CMD_HELP_ALL])(this);

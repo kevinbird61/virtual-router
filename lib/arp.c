@@ -1,4 +1,5 @@
 #include "router_ctx.h"
+#include "ether.h"
 #include "arph.h"
 
 /* ARP operations */
@@ -80,4 +81,43 @@ fill_dmac_by_arp(u32 ip, u8 *mac)
     }
 
     return -1;
+}
+
+
+int 
+send_gratuitous_arp(struct work_thrd_ctx_t *sbuff)
+{
+    u16 port_idx = sbuff->port_idx;
+    port_t *port = sbuff->ports[port_idx];
+    ethhdr *eth = (ethhdr *) (sbuff->pkt_buff);
+    sbuff->nh = sizeof(ethhdr);
+    arphdr *arph = (arphdr *) (sbuff->pkt_buff + sbuff->nh);
+    int nwrite = 0;
+    
+    memcpy(eth->smac, port->mac, 6);
+    memcpy(eth->dmac, bcast_mac, 6);
+    eth->ethertype = htons(ETH_ARP);
+    
+    arph->arp_hard_type = htons(0x0001); // Ethernet
+    arph->arp_hard_size = 6;
+    arph->arp_proto_type = htons(ETH_IP); 
+    arph->arp_proto_size = 4;
+    memcpy(arph->arp_eth_src, port->mac, 6);
+    memcpy(arph->arp_eth_dst, bcast_mac, 6);
+    arph->arp_ip_saddr = port->ip_addr;
+    arph->arp_ip_daddr = port->ip_addr;
+    arph->arp_op = htons(ARP_OP_RES);
+
+    nwrite = pkt_send(port, sbuff->pkt_buff, sbuff->nh + sizeof(arphdr));
+
+    if (nwrite) {
+        STATS_INC_SENT_PKT(sbuff);
+        if (sbuff->debug) {
+            LOG_TO_SCREEN("(%d) Send Gratuitous ARP.", port_idx);
+        }
+        return 1;
+    } else {
+        STATS_INC_DROP_PKT(sbuff);
+        return -1;
+    }
 }
