@@ -107,24 +107,33 @@ cmd_help_all(struct main_thrd_ctx_t *this)
                 break;
             case CMD_HELP:
                 L2_cmd_end = 0;
-                LOG_TO_SCREEN("\t%s ", L1_cmd[CMD_HELP]);
-                LOG_TO_SCREEN(": %s\n", desc_router_cmd[CMD_HELP_ALL]);
+                LOG_TO_SCREEN("%10s: %-50s", L1_cmd[CMD_HELP], desc_router_cmd[CMD_HELP_ALL]);
+                break;
+            case CMD_EXIT:
+                L2_cmd_end = 0;
+                LOG_TO_SCREEN("%10s: %-50s", L1_cmd[CMD_EXIT], desc_router_cmd[CMD_EXIT_ALL]);
                 break;
         }
 
         /* print the actual strings here */
         for(L2_cmd_idx; L2_cmd_idx < L2_cmd_end; L2_cmd_idx++){
             u8 iter_idx = 0;
-            LOG_TO_SCREEN("\t%s ", L1_cmd[L1_cmd_idx]);
             while(L2_cmd[L2_cmd_idx][iter_idx] != NULL){
-                LOG_TO_SCREEN("%s ", L2_cmd[L2_cmd_idx][iter_idx]);
+                LOG_TO_SCREEN("%10s %-10s: %-50s", L1_cmd[L1_cmd_idx], L2_cmd[L2_cmd_idx][iter_idx], desc_router_cmd[L2_cmd_idx]);
                 iter_idx++;
             }
-            /* description */
-            LOG_TO_SCREEN(": %s\n", desc_router_cmd[L2_cmd_idx]);
         }
     }
 
     
+    return 0;
+}
+
+/* ==================================== help ==================================== */
+int 
+cmd_exit_all(struct main_thrd_ctx_t *this)
+{
+    LOG_TO_SCREEN("Exit.");
+    exit(0);
     return 0;
 }

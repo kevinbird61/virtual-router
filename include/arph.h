@@ -1,6 +1,7 @@
 #ifndef __ARP__
 #define __ARP__
 
+#include "port.h"
 #include "types.h"
 
 #define ARP_TABLE_SIZE 32

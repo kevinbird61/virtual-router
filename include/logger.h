@@ -9,6 +9,8 @@
 
 #include "utils.h"
 
+#define SHOW_LOGFILE "/tmp/virtual_router_show.log"
+
 #define LOG_TO_SCREEN(format, info_args...)     \
     do {                                        \
         log_to_screen( format, ##info_args );   \
@@ -31,6 +33,12 @@ log_to_screen(char *info_args, ...)
     loginfo[size]='\n'; // next-line
 
     fprintf(stdout, "%s", loginfo);
+    return 0;
+}
+
+static inline int
+log_to_file(char *info_args, ...)
+{
     return 0;
 }
 

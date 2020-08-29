@@ -10,9 +10,9 @@ enum EtherType
 
 /* ethertype */
 static const char *g_ethertype_str[] = {
-    [ETH_IP]="ETH_IP",
-    [ETH_ARP]="ETH_ARP",
-    [ETH_IP6]="ETH_IPv6"
+    [ETH_IP]="IP",
+    [ETH_ARP]="ARP",
+    [ETH_IP6]="IPv6"
 };
 
 static const char bcast_mac[6] = {0xff, 0xff, 0xff, 0xff, 0xff, 0xff};

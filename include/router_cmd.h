@@ -8,6 +8,7 @@ enum L1_CMD {
     CMD_DEBUG = 0,
     CMD_SHOW,
     CMD_HELP,
+    CMD_EXIT,
     CMD_LAST
 };
 
@@ -15,6 +16,7 @@ static const char *L1_cmd[] = {
     [CMD_DEBUG] = "debug",
     [CMD_SHOW] = "show",
     [CMD_HELP] = "help",
+    [CMD_EXIT] = "exit",
     [CMD_LAST] = NULL
 };
 
@@ -31,6 +33,8 @@ enum ROUTER_CMD {
     CMD_SHOW_END,
     // help 
     CMD_HELP_ALL,
+    // exit,
+    CMD_EXIT_ALL,
     // end of router command
     CMD_ROUTE_CMD_END
 };
@@ -44,7 +48,9 @@ static const char *desc_router_cmd[] = {
     [CMD_SHOW_STATS] = "Show all statistics collected by virtual router.",
     [CMD_SHOW_PORTS] = "Show all ports/interfaces information.",
     // help 
-    [CMD_HELP_ALL] = "Print this help message."
+    [CMD_HELP_ALL] = "Print this help message.",
+    // exit
+    [CMD_EXIT_ALL] = "Exit virtual router."
 };
 
 static const char *L2_cmd[][32] = 
@@ -71,5 +77,7 @@ int cmd_show_stats(struct main_thrd_ctx_t *this);
 int cmd_show_ports(struct main_thrd_ctx_t *this);
 /* hook func - help */
 int cmd_help_all(struct main_thrd_ctx_t *this);
+/* hook func - exit */
+int cmd_exit_all(struct main_thrd_ctx_t *this);
 
 #endif

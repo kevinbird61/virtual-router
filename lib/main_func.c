@@ -22,6 +22,7 @@ int router_cli(struct main_thrd_ctx_t *this)
     cmd_hook_func[CMD_SHOW_STATS] =     cmd_show_stats;
     cmd_hook_func[CMD_SHOW_PORTS] =     cmd_show_ports;
     cmd_hook_func[CMD_HELP_ALL] =       cmd_help_all;
+    cmd_hook_func[CMD_EXIT_ALL] =       cmd_exit_all;
 
     LOG_TO_SCREEN("===============================================");
     while(1) {
@@ -46,11 +47,15 @@ int router_cli(struct main_thrd_ctx_t *this)
                             L2_idx = CMD_SHOW_START + 1;
                             L2_idx_end = CMD_SHOW_END;
                             break;
-                        /* =============================================
- * CMD_HELP ============================================= */
+                        /* ============================================= CMD_HELP ============================================= */
                         case CMD_HELP:
                             L2_idx_end = 0;
                             (*cmd_hook_func[CMD_HELP_ALL])(this);
+                            break;
+                        /* ============================================= CMD_EXIT ============================================= */
+                        case CMD_EXIT:
+                            L2_idx_end = 0;
+                            (*cmd_hook_func[CMD_EXIT_ALL])(this);
                             break;
                         default: // show not happen
                             break;

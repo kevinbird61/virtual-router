@@ -1,3 +1,4 @@
+#include "signal_handler.h"
 #include "router_ctx.h"
 #include "argparse.h"
 #include "logger.h"
@@ -34,6 +35,10 @@ int main(int argc, char *argv[])
         perror("pthread_spin_init (arp_lock) fail: ");
         exit(1);
     }
+
+    // signal handler
+    SIG_INIT(main_thrd);
+    SIG_HANDLE(SIGINT);
 
     // print user args
     printf("Number of ports: %d\n", main_thrd->user_args->num_port);

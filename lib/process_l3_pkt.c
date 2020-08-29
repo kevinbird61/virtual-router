@@ -1,4 +1,5 @@
 #include "process_l3_pkt.h"
+#include "debugger.h"
 
 int 
 process_ip_pkt(struct work_thrd_ctx_t *sbuff)
@@ -10,13 +11,10 @@ process_ip_pkt(struct work_thrd_ctx_t *sbuff)
     char src_ip_str[INET_ADDRSTRLEN], dst_ip_str[INET_ADDRSTRLEN];
     int nwrite = 0;
     sbuff->h = sbuff->nh + iph->ihl*4;
-    
-    if(sbuff->debug){
-        inet_ntop(AF_INET, &iph->saddr, src_ip_str, INET_ADDRSTRLEN);
-        inet_ntop(AF_INET, &iph->daddr, dst_ip_str, INET_ADDRSTRLEN);
-        LOG_TO_SCREEN("---------------------------------------------------------");
-        LOG_TO_SCREEN("(%d) saddr: %s, daddr: %s. IPPROTO: %s", port_idx, src_ip_str, dst_ip_str, g_ip_proto_str[iph->proto]);
-    }
+   
+    // TODO: ttl decrement
+
+    if (sbuff->debug) { LOG_PKT_INFO(sbuff, LOG_IP); }
 
     // TODO: IP options
 
@@ -54,11 +52,11 @@ process_ip_pkt(struct work_thrd_ctx_t *sbuff)
                 add_new_arp_cache(sbuff);
 
                 nwrite = pkt_send(target_port, sbuff->pkt_buff, sizeof(ethhdr) + sizeof(arphdr));
-                if(sbuff->debug && (nwrite > 0)){
-                    LOG_TO_SCREEN("(%d) Router send ARP request", port_idx);
-                    LOG_TO_SCREEN("(%d) Send packet to port:%d (%d bytes)", port->idx, target_port->idx, nwrite);
-                }
-                if(nwrite > 0){
+                if (nwrite > 0){
+                    if (sbuff->debug){
+                        LOG_TO_SCREEN("(%d)[%04d] Router send ARP request", port_idx, sbuff->sent_pkts);
+                        LOG_TO_SCREEN("(%d)[%04d] Send packet to port:%d (%d bytes)", port->idx, sbuff->sent_pkts, target_port->idx, nwrite);
+                    }
                     STATS_INC_SENT_PKT(sbuff);
                 }
             }
@@ -97,16 +95,10 @@ process_arp_pkt(struct work_thrd_ctx_t *sbuff)
     inet_ntop(AF_INET, &arph->arp_ip_saddr, arp_src_ip_str, INET_ADDRSTRLEN);
     inet_ntop(AF_INET, &arph->arp_ip_daddr, arp_dst_ip_str, INET_ADDRSTRLEN);
 
+    LOG_PKT_INFO(sbuff, LOG_ARP); 
+    
     switch(arp_op){
         case ARP_OP_REQ:
-            if(sbuff->debug){
-                LOG_TO_SCREEN("---------------------------------------------------------");
-                LOG_TO_SCREEN("(%d) %s, who has %s tell %s (%x.%x.%x.%x.%x.%x)", port_idx, 
-                        g_arp_op_str[arp_op], arp_dst_ip_str, arp_src_ip_str, 
-                        arph->arp_eth_src[0], arph->arp_eth_src[1], arph->arp_eth_src[2],
-                        arph->arp_eth_src[3], arph->arp_eth_src[4], arph->arp_eth_src[5]);
-            }
-            
             // check arp target is us or not
             if( arph->arp_ip_daddr == port->ip_addr ) {
                 // modify arp header to arp reply
@@ -120,31 +112,23 @@ process_arp_pkt(struct work_thrd_ctx_t *sbuff)
                 // send the arp reply back (unicast)
                 nwrite = pkt_send(port, sbuff->pkt_buff, sbuff->nh + sizeof(arphdr));
 
-                if(sbuff->debug && (nwrite > 0)) {
-                    LOG_TO_SCREEN("(%d) Send ARP reply back to %s", port_idx, arp_src_ip_str);
-                    LOG_TO_SCREEN("(%d) Send packet to port:%d (%d bytes)", port->idx, port->idx, nwrite);
-                }
-                if(nwrite > 0){
+                if (nwrite > 0) {
+                    if (sbuff->debug) {
+                        LOG_TO_SCREEN("(%d)[%04d] Send ARP reply back to %s", port_idx, sbuff->sent_pkts, arp_src_ip_str);
+                        LOG_TO_SCREEN("(%d)[%04d] Send packet to port:%d (%d bytes)", port->idx, sbuff->sent_pkts, port->idx, nwrite);
+                    }
                     STATS_INC_SENT_PKT(sbuff);
                 }
             } else {
                 // drop 
                 if(sbuff->debug) {
-                    LOG_TO_SCREEN("(%d) ARP request is not for us, drop it", port_idx);
+                    LOG_TO_SCREEN("(%d)[%04d] ARP request is not for us, drop it", port_idx, sbuff->sent_pkts);
                 }
                 STATS_INC_DROP_PKT(sbuff);
             }
 
             break;
         case ARP_OP_RES:
-            if(sbuff->debug){
-                LOG_TO_SCREEN("---------------------------------------------------------");
-                LOG_TO_SCREEN("(%d) %s, %s is-at %x.%x.%x.%x.%x.%x", port_idx, 
-                        g_arp_op_str[arp_op], arp_src_ip_str, 
-                        arph->arp_eth_src[0], arph->arp_eth_src[1], arph->arp_eth_src[2],
-                        arph->arp_eth_src[3], arph->arp_eth_src[4], arph->arp_eth_src[5]);
-            }
-
             // check arp target is us or not
             if( arph->arp_ip_daddr == port->ip_addr ) {
                 resolve_arp_cache(sbuff);
@@ -155,11 +139,11 @@ process_arp_pkt(struct work_thrd_ctx_t *sbuff)
                         // modify mac addr
                         memcpy(eth->smac, sbuff->ports[i]->mac, 6);
                         nwrite = pkt_send(sbuff->ports[i], sbuff->pkt_buff, sbuff->nh + sizeof(arphdr));
-                        if(sbuff->debug && (nwrite > 0)) {
-                            LOG_TO_SCREEN("(%d) Flood ARP reply to port:%d", port_idx, i);
-                            LOG_TO_SCREEN("(%d) Send packet to port:%d (%d bytes)", port->idx, sbuff->ports[i]->idx, nwrite);
-                        }
                         if(nwrite > 0){
+                            if(sbuff->debug) {
+                                LOG_TO_SCREEN("(%d)[%04d] Flood ARP reply to port:%d", port_idx, sbuff->sent_pkts, i);
+                                LOG_TO_SCREEN("(%d)[%04d] Send packet to port:%d (%d bytes)", port->idx, sbuff->sent_pkts, sbuff->ports[i]->idx, nwrite);
+                            }
                             STATS_INC_SENT_PKT(sbuff);
                         }
                     }
