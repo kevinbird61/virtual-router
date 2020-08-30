@@ -1,6 +1,6 @@
 #include "process_l2_pkt.h"
 #include "router_ctx.h"
-#include "ether.h"
+#include "pkthdr.h"
 #include "utils.h"
 
 #include <sys/poll.h>

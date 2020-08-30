@@ -1,6 +1,5 @@
 #include "router_ctx.h"
-#include "ether.h"
-#include "arph.h"
+#include "pkthdr.h"
 
 /* ARP operations */
 int 

@@ -25,14 +25,15 @@ log_to_screen(char *info_args, ...)
     int size = vsnprintf(loginfo, size, info_args, ap);
     va_end(ap);
 
-    size++; // for `\n`
+    size++;
     SAVE_ALLOC(loginfo, size, char);
     va_start(ap, info_args);
-    size=vsnprintf(loginfo, size, info_args, ap);
+    size = vsnprintf(loginfo, size, info_args, ap);
     va_end(ap);
-    loginfo[size]='\n'; // next-line
 
-    fprintf(stdout, "%s", loginfo);
+    fprintf(stdout, "%s\n", loginfo);
+
+    free(loginfo);
     return 0;
 }
 

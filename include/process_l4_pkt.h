@@ -6,11 +6,9 @@
 #include "router_ctx.h"
 #include "checksum.h"
 #include "logger.h"
+#include "pkthdr.h"
 #include "types.h"
 #include "utils.h"
-#include "icmph.h"
-#include "tcph.h"
-#include "udph.h"
 
 int process_icmp_pkt(struct work_thrd_ctx_t *sbuff);
 int process_tcp_pkt(struct work_thrd_ctx_t *sbuff);

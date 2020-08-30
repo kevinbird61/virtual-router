@@ -20,7 +20,6 @@ process_ip_pkt(struct work_thrd_ctx_t *sbuff)
 
     // check if this packet is for us
     if(iph->daddr != port->ip_addr){
-        // TODO: using routing table 
         // - lookup route
         target_port = lookup_route(iph->daddr);
         if(target_port == NULL){

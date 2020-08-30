@@ -31,5 +31,5 @@ process_eth_pkt(struct work_thrd_ctx_t *sbuff)
         // TODO
     }
 
-    if (sbuff->debug) { LOG_PKT_END(); }
+    // if (sbuff->debug) { LOG_PKT_END(); }
 }
