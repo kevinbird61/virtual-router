@@ -11,36 +11,40 @@
 
 #define SHOW_LOGFILE "/tmp/virtual_router_show.log"
 
-#define LOG_TO_SCREEN(format, info_args...)     \
-    do {                                        \
-        log_to_screen( format, ##info_args );   \
+#define LOG_TO_SCREEN(format, info_args...)     	\
+    do {             								\
+		char *log_msg = 							\
+			get_msg_from_args(format, ##info_args);	\
+		fprintf(stdout, "%s\n", log_msg);			\
+		free(log_msg);								\
     } while(0)
 
-static inline int
-log_to_screen(char *info_args, ...)
+#define LOG_TO_FILE(format, info_args...)     		\
+    do {             								\
+		char *log_msg = 							\
+			get_msg_from_args(format, ##info_args);	\
+		FILE *logfile = fopen(SHOW_LOGFILE, "a"); 	\
+		fprintf(logfile, "%s\n", log_msg);			\
+		free(log_msg);								\
+		fclose(logfile);							\
+    } while(0)
+
+static inline char*
+get_msg_from_args(const char *info_args, ...)
 {
-    char *loginfo = NULL; 
+	char *log_msg = NULL;
     va_list ap;
     va_start(ap, info_args); 
-    int size = vsnprintf(loginfo, size, info_args, ap);
+    int size = vsnprintf(log_msg, size, info_args, ap);
     va_end(ap);
 
     size++;
-    SAVE_ALLOC(loginfo, size, char);
+    SAVE_ALLOC(log_msg, size, char);
     va_start(ap, info_args);
-    size = vsnprintf(loginfo, size, info_args, ap);
+    size = vsnprintf(log_msg, size, info_args, ap);
     va_end(ap);
 
-    fprintf(stdout, "%s\n", loginfo);
-
-    free(loginfo);
-    return 0;
-}
-
-static inline int
-log_to_file(char *info_args, ...)
-{
-    return 0;
+	return log_msg;
 }
 
 #endif
