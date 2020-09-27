@@ -1,4 +1,4 @@
-#include "router_cmd.h"
+#include "cli/router_cmd.h"
 
 #include <stdio.h>
 

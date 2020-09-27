@@ -1,5 +1,5 @@
+#include "cli/router_cmd.h"
 #include "router_ctx.h"
-#include "router_cmd.h"
 #include "types.h"
 
 #include <string.h>
